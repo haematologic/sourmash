@@ -178,13 +178,14 @@ class MinHash(RustObject):
         return self._methodcall(lib.kmerminhash_get_mins_size)
 
     def get_mins(self, with_abundance=False):
+        size = self._methodcall(lib.kmerminhash_get_mins_size)
+        mins_ptr = self._methodcall(lib.kmerminhash_get_mins)
+
         if with_abundance and self.track_abundance:
-            return {self._methodcall(lib.kmerminhash_get_min_idx, idx):
-                    self._methodcall(lib.kmerminhash_get_abund_idx, idx)
-                    for idx in range_type(len(self))}
+            abunds_ptr = self._methodcall(lib.kmerminhash_get_abunds)
+            return dict(zip(memoryview(ffi.buffer(mins_ptr, 8 * size)).cast('Q').tolist(),
+                            memoryview(ffi.buffer(abunds_ptr, 8 * size)).cast('Q').tolist()))
         else:
-            size = self._methodcall(lib.kmerminhash_get_mins_size)
-            mins_ptr = self._methodcall(lib.kmerminhash_get_mins)
             return memoryview(ffi.buffer(mins_ptr, 8 * size)).cast('Q').tolist()
 
     def get_hashes(self):
